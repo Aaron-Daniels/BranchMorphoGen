@@ -1,0 +1,120 @@
+################## THIS IS THE INPUT PARAMETERS FILE, CHANGE ONLY NUMERIC VALUES
+################## PLEASE DO NOT CHANGE PARAMETER NAMES
+################## PUT ; AFTER EACH VALUE
+################## Be consistentent with units  
+################# For dynamic parameters  LimitsX,LimitsY,LimitsZ, StateVelocity,TransitionRates, and Branching rate
+################# you can use 'time : value(s)' format; 
+
+############ Simulation Geometry & Time Settings 
+    SimulationName=xx;                     // Name your simulation
+    SpatialUnit=micron ;                        //don't put quotation marks
+    TemporalUnit=min;                           //don't put quotation marks
+    NSample=1;                                  //Number of samples
+    RunParallel=false;                           # run parallely ?
+    Dimension = 2;                              // Simulation dimension: 2 or 3
+    Dt = 0.025;                                 // Time step size in TemporalUnit
+    Time_Start = 960.0;                          //Simulation start time
+    Time_End = 7200.0;                          // Total simulation TemporalUnit 
+
+########### Initial Branch Configuration
+    ReadFromSWC=false;                           //Read intial conf from .swc file?
+    SWCFileName=INPUT2.swc;                      //input .swc filename
+
+######## If not reading initial swc files, setup the initial configuration
+    Root = 0.0, 0.0,0.0;                       // Initial root position of the neuron
+    N_BranchInitial = 2-4;                      // Number of initial branches from the soma, takes range like 2-4
+    InitialLength = 15.0;                       // Length of initial branches SpatialUnit
+    InitialAngle=90.0;                         // Intial angle
+    InitialAngleWithZ=0;                       //angle in Degrees
+    RadiusSoma = 5.0;                           // Soma radius SpatialUnit
+    NascentBranchLength = 0.60;                  // Length of a newly spawned (nascent) branch
+    BranchInterval = 0.1;                       // Segment length between points on a branch SpatialUnit
+    PersistanceLength = 100.0;                   // Persistence length SpatialUnit for directional memory
+
+######### Boundary.  
+    LimitsX=
+    960:-40.0,40.0;
+    5760:-175.0,175.0;
+    7200:-175.0,175.0;
+
+    LimitsY=
+    960:-60,60;
+    5760:-225,225;
+    7200:-225,225;
+
+    LimitsZ=-10,10;
+   
+   Boundary_SoftLength=15.0;                         /// measure the width of the soft boundary in length scale
+
+########## Tip States 
+    States = 1,0,-1;                                  // possible states: e.g., growing (+1), and shrinking (-1), pausing (0), etc. eg 1,-1 etc.
+    StateVelocity =
+    960:1.54,0.0,-1.63;                               //velocities associated with each state, # states and # velocities must be same eg. 0.5,-0.5
+    1440:1.6,0.0,-1.53;
+    2880:1.6,0.0,-1.1;
+    5760:1.64,0.0,-1.33;
+    7200:1.64,0.0,-1.33;
+
+    TransitionRates=                
+    960:0,0.6962,0.5086;0.4225,0.0,0.2956;0.6693,0.7098,0.0;                   //transition rate will be a Number of states square matrix with diagonals zero.           
+    1440:0,0.7839,0.6400;0.3349,0,0.3137;0.5978,0.9460,0;
+    2880:0,0.9325,0.4352;0.1550,0,0.2354;0.2819,1.2514,0;
+    5760:0,0.9230,0.7987;0.1156,0,0.1165;0.5749,1.2764,0;
+    7200:0,0.9230,0.7987;0.1156,0,0.1165;0.5749,1.2764,0;
+
+########### Branching Parameters 
+    Bifurcation=false;                          //Choose bifurcation or side Branching
+    BifurcationRatio=1.0;                       // Symmetry between bifurcation angle, 0-1, 0 totally asymm, 1-> symm
+    BranchingAngleRef=local;                    // Branching angle reference frame: optins global/local; 
+    PolarAngleMode=reflective;                  // Options: fixed/uniform/reflective; in 2D doesn't do anything
+    PolarBranchingAngle=30;                     // polar Angle between parent and daughter branches, this is bifurcation angle
+    AzimuthalAngleMode=reflective;              // options: fixed/uniform/reflective; in 2D this is the Branching angle
+    AzimuthalBranchingAngle=90;                 // azimuthal angle between parent and daughter branches
+    BranchingAngleSTD=30;                       // std of the branching angle noise, set 0 for no noise
+
+    LengthDependentBranching=true;              //is branching length dependent, prob of branching is weighted by length or not
+    BranchingRate = 
+    960:0.01906;                     // Branching rate per unit time (probabilistic)
+    1440:0.00954;
+    2160:0.0031;
+    2880:0.00191;
+    4320:0.00113;
+    5760:0.00114;
+    7200:0.00114;
+
+    RebranchingProb = 0.2;                      // Probability that an old branch rebranches again
+    TerminationRate = 0.0;                      // Probability that an old branch rebranches again
+
+#########. Collision Handling 
+    SelfAvoiding=true;                           //Do tips slf-avoid?
+    Interaction_Threshold = 0.2;               // Minimum distance for two segments to be considered colliding in SpatialUnit
+    FreezeCollidedBranch=false;                  // if true collided branches do not branch again
+    Collision_States = 1,0,-1;                      // Tip states that are allowed to collide (e.g., shrinking)
+    Collision_StateVelocity=1.69,0,-1.1;            // Velocities of tips in collision state
+    PostCollisionPeriod=1000.0;
+    Collision_TransitionRates=0,1.4463,1.2397;0.1336,0,0.2903;0.2386,0.8135,0;         // State transitions upon collision
+
+########## Force Parameters 
+    StraightenBranches=true;                    //Straighten the brances? true/false
+    E_Axial = 10.0;                             // Axial Young's modulus
+    E_Bending = 7500.0;                          // Bending Young's modulus 
+    DragCoef = 0.60;                            // Viscosity-like parameter 
+
+################# Radius parameters and Topology
+    MinimumRadius=0.1;                          // minimum radius of branches 
+    MaximumRadius=0.4;                          // minimum radius of branches 
+    RadiusModel=TipNumber;                      // Radius growth based on integrated subtee props, options: None/TipNumber/BranchNumber/Length/Area/Volume 
+    BetaRadius=0.00135;                          //Const. for radius increment as Radius model, 
+
+###################### Data output Configurations     
+    N_SWC=11;                                     //Number of swc files to print
+    MAX_IMAGE_SIZE=500;                          // in spatial Units (-1 for LimitsX,LimitsY)
+    ImagePlane=xy;                                 //plane of image; options xy/xz/yz
+    pixelsize=0.1615;                               // in spatial Units
+    SignalMean=200.0;                           // Arbitrary Units
+    SignalStd=20.0;
+    BackgroundMean=9.0;
+    BackgroundStd=2.50;
+
+######## END OF INPUT PARAMETERS 
+
