@@ -1,4 +1,4 @@
-<img width="300" height="200" alt="BranchMorphoGen-Logo" src="https://github.com/user-attachments/assets/01b19b51-2cd4-42d6-ac7b-c9627e237b5a" />
+<img width="133" height="111" alt="BranchMorphoGen-Logo" src="https://github.com/user-attachments/assets/fcb767ac-ed48-4da8-b156-586ca2a4e87b" />
 
 # BranchMorphoGen
 
