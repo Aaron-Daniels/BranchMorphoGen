@@ -283,7 +283,7 @@ void Simulation::Step(SimulationParameters &params,
         }
         }
     //////////////// If there is debranching fix tree topology and update neighborlist
-    keypointTracker_.assignAfterBranching(Branches);
+    keypointTracker_.assignAfterBranching(Branches, irun, tsim);
     BranchRelabel::debranching(Branches, Deletion_List, params);
     keypointTracker_.reconcileAfterTopology(Branches);
     /////////////////////////// Calculate force and update positions and radius

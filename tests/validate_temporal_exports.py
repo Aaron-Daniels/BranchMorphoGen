@@ -16,9 +16,10 @@ def key(row):
     return int(row["sample"]), row["keypoint_type"], int(row["persistent_id"])
 
 
-def validate(events_path, snapshots_path):
+def validate(events_path, snapshots_path, lineage_path):
     events = rows(events_path)
     snapshots = rows(snapshots_path)
+    lineage = rows(lineage_path)
     births = {}
     retirements = {}
     previous_step = -1
@@ -64,10 +65,33 @@ def validate(events_path, snapshots_path):
             f"missing={sorted(expected-observed)[:5]} extra={sorted(observed-expected)[:5]}"
         )
 
+    seen_junctions = set()
+    seen_new_tips = set()
+    for row in lineage:
+        sample = int(row["sample"])
+        step = int(row["timestep"])
+        source = (sample, "tip", int(row["source_tip_id"]))
+        junction = (sample, "junction", int(row["junction_id"]))
+        continuing = (sample, "tip", int(row["continuing_tip_id"]))
+        new_tip = (sample, "tip", int(row["new_tip_id"]))
+        assert row["branching_mode"] in {"side_branching", "bifurcation"}, \
+            f"unknown branching mode: {row['branching_mode']}"
+        assert source == continuing, "continuation must inherit source tip identity"
+        assert source in births and births[source] <= step, \
+            f"source tip missing at lineage event: {source}"
+        assert junction in births and births[junction] == step, \
+            f"junction birth does not match lineage event: {junction}"
+        assert new_tip in births and births[new_tip] == step, \
+            f"new-tip birth does not match lineage event: {new_tip}"
+        assert junction not in seen_junctions, f"junction reused in lineage: {junction}"
+        assert new_tip not in seen_new_tips, f"new tip reused in lineage: {new_tip}"
+        seen_junctions.add(junction)
+        seen_new_tips.add(new_tip)
+
     print(
         "valid:", f"events={len(events)}", f"births={len(births)}",
         f"retirements={len(retirements)}", f"snapshot_rows={len(snapshots)}",
-        f"frames={len(frames)}"
+        f"frames={len(frames)}", f"lineage_events={len(lineage)}"
     )
 
 
@@ -75,5 +99,6 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("events", type=Path)
     parser.add_argument("snapshots", type=Path)
+    parser.add_argument("lineage", type=Path)
     args = parser.parse_args()
-    validate(args.events, args.snapshots)
+    validate(args.events, args.snapshots, args.lineage)

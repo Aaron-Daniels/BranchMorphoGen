@@ -31,7 +31,7 @@ int main() {
     Branch continuation = makeTip(1, {1.5, 1.0, 0.0});
     Branch daughter = makeTip(2, {0.5, 1.5, 0.0});
     branches = {parent, continuation, daughter};
-    tracker.assignAfterBranching(branches);
+    tracker.assignAfterBranching(branches, 1, 1.0);
     tracker.reconcileAfterTopology(branches);
     tracker.recordLifecycle(branches, 1, 1.0);
     tracker.writeSnapshot(branches, 1, 1.0);

@@ -13,7 +13,9 @@ public:
     void initialize(std::vector<Branch>& branches,
                     const SimulationParameters& params,
                     int sample);
-    void assignAfterBranching(std::vector<Branch>& branches);
+    void assignAfterBranching(std::vector<Branch>& branches,
+                              std::size_t timestep,
+                              double time);
     void reconcileAfterTopology(std::vector<Branch>& branches);
     void recordLifecycle(const std::vector<Branch>& branches,
                          std::size_t timestep,
@@ -36,6 +38,8 @@ private:
     bool enabled_ = false;
     std::string snapshotFilename_;
     std::string eventFilename_;
+    std::string lineageFilename_;
+    const char* branchingMode_ = "side_branching";
     Observations previousTips_;
     Observations previousJunctions_;
     std::unordered_map<std::int64_t, std::size_t> tipBirths_;

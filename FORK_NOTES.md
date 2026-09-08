@@ -28,11 +28,23 @@ Set `DumpKeypoints=true` to write:
 
 - `<SimulationName>-KeypointSnapshots-Sample-<N>.csv`
 - `<SimulationName>-KeypointEvents-Sample-<N>.csv`
+- `<SimulationName>-KeypointLineage-Sample-<N>.csv`
 
 Snapshot rows contain sample, timestep, simulation time, keypoint type,
 persistent ID, x/y/z coordinates, dynamic state, and birth timestep. Event rows
 record each birth and retirement. Coordinate and time units are the
 `SpatialUnit` and `TemporalUnit` selected in the input file.
+
+Each lineage row records one branching event using:
+
+```text
+sample,timestep,time,branching_mode,source_tip_id,junction_id,continuing_tip_id,new_tip_id,x,y,z
+```
+
+`source_tip_id` equals `continuing_tip_id` under this fork's continuation
+convention. `junction_id` and `new_tip_id` must be born at the lineage event's
+timestep. The row also records whether the simulator was configured for side
+branching or bifurcation and the new junction's position.
 
 `RandomSeed` is the deterministic base seed. Sample index `i` (zero-based for
 seed derivation) uses `RandomSeed + i`; therefore serial and parallel execution
@@ -49,7 +61,8 @@ tests/run_temporal_smoke_test.sh
 The test compiles a debug executable, runs a forced topology lifecycle fixture,
 runs two identical two-sample simulations, byte-compares their keypoint CSVs,
 and validates unique births, retirement ordering, non-reuse, birth timestamps,
-and active identities at every exported frame.
+active identities at every exported frame, and the referential integrity of
+every branching-lineage relationship.
 
 On the initial development machine, CMake was unavailable, so validation used
 Apple Clang with the Homebrew libTIFF include/library paths. The upstream CMake
@@ -61,8 +74,9 @@ configuration was not independently exercised there.
   unpublished Dataset-2 generation settings.
 - The short smoke simulation tests determinism and file consistency, not
   biological realism or the full stochastic event distribution.
-- The exporter does not yet encode parent-child lineage edges between persistent
-  identities; those should be added before training lineage-aware association.
+- The lineage export records keypoint relationships at branching events but does
+  not yet provide a persistent ID for every non-keypoint segment in the full
+  morphology graph.
 - TIFF rendering and biological parameters require separate calibration and
   validation against an authorized reference dataset.
 - No Yale images, Dataset-2 files, unpublished parameters, or other restricted

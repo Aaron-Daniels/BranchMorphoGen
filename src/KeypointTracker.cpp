@@ -31,6 +31,9 @@ void KeypointTracker::initialize(std::vector<Branch>& branches,
                         std::to_string(sample) + ".csv";
     eventFilename_ = params.SimulationName + "-KeypointEvents-Sample-" +
                      std::to_string(sample) + ".csv";
+    lineageFilename_ = params.SimulationName + "-KeypointLineage-Sample-" +
+                       std::to_string(sample) + ".csv";
+    branchingMode_ = params.Bifurcation ? "bifurcation" : "side_branching";
 
     for (Branch& branch : branches) {
         if (branch.Dynamic) branch.PersistentTipID = nextTipID_++;
@@ -44,16 +47,25 @@ void KeypointTracker::initialize(std::vector<Branch>& branches,
     std::ofstream events(eventFilename_, std::ios::trunc);
     requireStream(events, eventFilename_);
     events << "sample,timestep,time,keypoint_type,persistent_id,event,x,y,z,state\n";
+
+    std::ofstream lineage(lineageFilename_, std::ios::trunc);
+    requireStream(lineage, lineageFilename_);
+    lineage << "sample,timestep,time,branching_mode,source_tip_id,junction_id,"
+               "continuing_tip_id,new_tip_id,x,y,z\n";
 }
 
-void KeypointTracker::assignAfterBranching(std::vector<Branch>& branches) {
+void KeypointTracker::assignAfterBranching(std::vector<Branch>& branches,
+                                           std::size_t timestep,
+                                           double time) {
     if (!enabled_) return;
     for (Branch& parent : branches) {
         if (parent.Dynamic || parent.PersistentTipID < 0) continue;
+        if (parent.Points.empty()) continue;
         if (parent.Child1_ID < 0 || parent.Child2_ID < 0) continue;
         if (parent.Child1_ID >= static_cast<int>(branches.size()) ||
             parent.Child2_ID >= static_cast<int>(branches.size())) continue;
 
+        const std::int64_t sourceTipID = parent.PersistentTipID;
         Branch& continuation = branches[parent.Child1_ID];
         Branch& newDaughter = branches[parent.Child2_ID];
         if (continuation.PersistentTipID < 0)
@@ -62,6 +74,15 @@ void KeypointTracker::assignAfterBranching(std::vector<Branch>& branches) {
             newDaughter.PersistentTipID = nextTipID_++;
         if (parent.PersistentJunctionID < 0)
             parent.PersistentJunctionID = nextJunctionID_++;
+
+        std::ofstream lineage(lineageFilename_, std::ios::app);
+        requireStream(lineage, lineageFilename_);
+        lineage << std::setprecision(17)
+                << sample_ << ',' << timestep << ',' << time << ',' << branchingMode_ << ','
+                << sourceTipID << ',' << parent.PersistentJunctionID << ','
+                << continuation.PersistentTipID << ',' << newDaughter.PersistentTipID << ','
+                << parent.Points.back().x << ',' << parent.Points.back().y << ','
+                << parent.Points.back().z << '\n';
         parent.PersistentTipID = -1;
     }
 }
