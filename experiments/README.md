@@ -87,3 +87,31 @@ of immediate children that are tips, and child opening angle. Persistent IDs are
 used to retrieve connected coordinates while constructing the simulator
 fixture, but ID values and equality are not included in assignment costs. IDs
 are consulted only after assignment to calculate evaluation metrics.
+
+## Detector-like corruption
+
+`evaluate_corruption_robustness.py` applies seeded Gaussian localization noise,
+independent missed detections, and Poisson-distributed false detections. Run the
+same held-out arbors through motion-only and topology-aware matching with one
+command. For example:
+
+```sh
+python experiments/evaluate_corruption_robustness.py \
+  --gate 5 --topology-weight 5 \
+  --sigma 1 --miss-probability 0.2 --false-ratio 0.2 \
+  --repetitions 30 --seed 20260914 \
+  --snapshots /path/to/heldout/*KeypointSnapshots*.csv \
+  --topology /path/to/heldout/*KeypointTopology*.csv \
+  --output moderate-corruption.json
+```
+
+This is an optimistic upper-bound test: surviving real keypoints retain exact
+simulator-derived topology descriptors, while false detections receive a neutral
+all-zero descriptor. It does not simulate errors in estimating the morphology
+graph itself. Persistent IDs remain excluded from assignment costs.
+
+Association recall uses every true continuing simulator identity as its
+denominator, including identities made unavailable by a simulated miss. This
+allows missed detections to reduce end-to-end association recall rather than
+quietly disappearing from evaluation. Each repetition applies the exact same
+corrupted observations to both methods, enabling paired macro-F1 differences.

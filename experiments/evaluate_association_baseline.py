@@ -85,8 +85,11 @@ def match(previous, current, gate, previous_descriptors=None,
     ])
     objective = costs.copy()
     if topology_weight:
+        descriptor_size = 6
+        zero_descriptor = np.zeros(descriptor_size, dtype=float)
         topology_costs = np.array([
-            [np.linalg.norm(previous_descriptors[a] - current_descriptors[b])
+            [np.linalg.norm(previous_descriptors.get(a, zero_descriptor) -
+                            current_descriptors.get(b, zero_descriptor))
              for b in current_ids]
             for a in previous_ids
         ])
@@ -102,9 +105,8 @@ def match(previous, current, gate, previous_descriptors=None,
     ]
 
 
-def evaluate_file(path: Path, gate: float, topology_path=None, topology_weight=0.0):
-    frames = load_snapshots(path)
-    descriptors = load_topology(topology_path, frames, gate) if topology_path else None
+def evaluate_frames(frames, gate: float, descriptors=None, topology_weight=0.0,
+                    reference_frames=None):
     totals = defaultdict(int)
     distances = []
     steps = sorted(frames)
@@ -120,9 +122,15 @@ def evaluate_file(path: Path, gate: float, topology_path=None, topology_weight=0
             )
             assigned_previous = {a for a, _, _ in assignments}
             assigned_current = {b for _, b, _ in assignments}
-            continuing = set(previous) & set(current)
-            births = set(current) - set(previous)
-            retirements = set(previous) - set(current)
+            reference_previous = (
+                reference_frames[previous_step][kind] if reference_frames else previous
+            )
+            reference_current = (
+                reference_frames[current_step][kind] if reference_frames else current
+            )
+            continuing = set(reference_previous) & set(reference_current)
+            births = set(reference_current) - set(reference_previous)
+            retirements = set(reference_previous) - set(reference_current)
             correct = {(a, b) for a, b, _ in assignments if a == b}
             correct_ids = {a for a, _ in correct}
 
@@ -140,10 +148,8 @@ def evaluate_file(path: Path, gate: float, topology_path=None, topology_weight=0
             )
             distances.extend(distance for a, b, distance in assignments if a == b)
 
-    result = {
-        "snapshot_file": str(path), "topology_file": str(topology_path) if topology_path else None,
-        "gate_spatial_units": gate, "topology_weight_spatial_units": topology_weight, **totals,
-    }
+    result = {"gate_spatial_units": gate,
+              "topology_weight_spatial_units": topology_weight, **totals}
     for kind in ("tip", "junction"):
         prefix = kind + "_"
         correct = totals[prefix + "correct_matches"]
@@ -159,6 +165,15 @@ def evaluate_file(path: Path, gate: float, topology_path=None, topology_weight=0
         )
     result["correct_match_mean_distance"] = float(np.mean(distances)) if distances else None
     result["correct_match_max_distance"] = float(np.max(distances)) if distances else None
+    return result
+
+
+def evaluate_file(path: Path, gate: float, topology_path=None, topology_weight=0.0):
+    frames = load_snapshots(path)
+    descriptors = load_topology(topology_path, frames, gate) if topology_path else None
+    result = evaluate_frames(frames, gate, descriptors, topology_weight)
+    result["snapshot_file"] = str(path)
+    result["topology_file"] = str(topology_path) if topology_path else None
     return result
 
 
