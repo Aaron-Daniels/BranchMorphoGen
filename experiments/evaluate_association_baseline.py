@@ -25,7 +25,56 @@ def load_snapshots(path: Path):
     return frames
 
 
-def match(previous, current, gate):
+def load_topology(path: Path, frames, gate):
+    rows_by_frame = defaultdict(dict)
+    with path.open(newline="", encoding="utf-8") as handle:
+        for row in csv.DictReader(handle):
+            rows_by_frame[int(row["timestep"])][
+                (row["keypoint_type"], int(row["persistent_id"]))
+            ] = row
+
+    descriptors = defaultdict(lambda: defaultdict(dict))
+    for step, graph in rows_by_frame.items():
+        positions = frames[step]
+        for (kind, identity), row in graph.items():
+            position = positions[kind][identity]
+            parent_id = int(row["parent_junction_id"])
+            has_parent = float(parent_id >= 0)
+            parent_distance = 0.0
+            if parent_id >= 0:
+                parent_distance = np.linalg.norm(position - positions["junction"][parent_id]) / gate
+
+            child_distances = []
+            child_tip_count = 0
+            child_vectors = []
+            for slot in ("child1", "child2"):
+                child_type = row[slot + "_type"]
+                child_id = int(row[slot + "_id"])
+                if child_id < 0:
+                    continue
+                child_position = positions[child_type][child_id]
+                vector = child_position - position
+                child_vectors.append(vector)
+                child_distances.append(float(np.linalg.norm(vector)) / gate)
+                child_tip_count += child_type == "tip"
+            child_distances.sort()
+            child_distances += [0.0] * (2 - len(child_distances))
+
+            opening_angle = 0.0
+            if len(child_vectors) == 2:
+                norms = np.linalg.norm(child_vectors[0]) * np.linalg.norm(child_vectors[1])
+                if norms > 0:
+                    cosine = np.clip(np.dot(child_vectors[0], child_vectors[1]) / norms, -1, 1)
+                    opening_angle = float(np.arccos(cosine) / np.pi)
+            descriptors[step][kind][identity] = np.array([
+                has_parent, parent_distance, child_distances[0], child_distances[1],
+                child_tip_count / 2.0, opening_angle,
+            ])
+    return descriptors
+
+
+def match(previous, current, gate, previous_descriptors=None,
+          current_descriptors=None, topology_weight=0.0):
     previous_ids = sorted(previous)
     current_ids = sorted(current)
     if not previous_ids or not current_ids:
@@ -34,7 +83,18 @@ def match(previous, current, gate):
         [np.linalg.norm(previous[a] - current[b]) for b in current_ids]
         for a in previous_ids
     ])
-    rows, columns = linear_sum_assignment(costs)
+    objective = costs.copy()
+    if topology_weight:
+        topology_costs = np.array([
+            [np.linalg.norm(previous_descriptors[a] - current_descriptors[b])
+             for b in current_ids]
+            for a in previous_ids
+        ])
+        objective += topology_weight * topology_costs
+    finite = objective[costs <= gate]
+    invalid_cost = (max(objective.shape) + 1) * ((float(np.max(finite)) if finite.size else gate) + 1)
+    objective[costs > gate] = invalid_cost
+    rows, columns = linear_sum_assignment(objective)
     return [
         (previous_ids[row], current_ids[column], float(costs[row, column]))
         for row, column in zip(rows, columns)
@@ -42,8 +102,9 @@ def match(previous, current, gate):
     ]
 
 
-def evaluate_file(path: Path, gate: float):
+def evaluate_file(path: Path, gate: float, topology_path=None, topology_weight=0.0):
     frames = load_snapshots(path)
+    descriptors = load_topology(topology_path, frames, gate) if topology_path else None
     totals = defaultdict(int)
     distances = []
     steps = sorted(frames)
@@ -51,7 +112,12 @@ def evaluate_file(path: Path, gate: float):
         for kind in ("tip", "junction"):
             previous = frames[previous_step][kind]
             current = frames[current_step][kind]
-            assignments = match(previous, current, gate)
+            assignments = match(
+                previous, current, gate,
+                descriptors[previous_step][kind] if descriptors else None,
+                descriptors[current_step][kind] if descriptors else None,
+                topology_weight,
+            )
             assigned_previous = {a for a, _, _ in assignments}
             assigned_current = {b for _, b, _ in assignments}
             continuing = set(previous) & set(current)
@@ -74,7 +140,10 @@ def evaluate_file(path: Path, gate: float):
             )
             distances.extend(distance for a, b, distance in assignments if a == b)
 
-    result = {"snapshot_file": str(path), "gate_spatial_units": gate, **totals}
+    result = {
+        "snapshot_file": str(path), "topology_file": str(topology_path) if topology_path else None,
+        "gate_spatial_units": gate, "topology_weight_spatial_units": topology_weight, **totals,
+    }
     for kind in ("tip", "junction"):
         prefix = kind + "_"
         correct = totals[prefix + "correct_matches"]
@@ -139,14 +208,27 @@ def main() -> None:
     parser.add_argument("snapshots", type=Path, nargs="+")
     parser.add_argument("--gate", type=float, required=True)
     parser.add_argument("--output", type=Path)
+    parser.add_argument("--topology", type=Path, nargs="*")
+    parser.add_argument("--topology-weight", type=float, default=0.0)
     args = parser.parse_args()
-    if args.gate < 0:
-        parser.error("--gate must be non-negative")
+    if args.gate <= 0:
+        parser.error("--gate must be positive")
+    if args.topology_weight < 0:
+        parser.error("--topology-weight must be non-negative")
+    if args.topology_weight and not args.topology:
+        parser.error("--topology is required when --topology-weight is non-zero")
+    if args.topology and len(args.topology) != len(args.snapshots):
+        parser.error("--topology must provide one file per snapshot file")
 
-    results = [evaluate_file(path, args.gate) for path in args.snapshots]
+    topology = args.topology or [None] * len(args.snapshots)
+    results = [
+        evaluate_file(path, args.gate, topology_path, args.topology_weight)
+        for path, topology_path in zip(args.snapshots, topology)
+    ]
     payload = {
         "method": "oracle-coordinate motion-gated Hungarian assignment",
         "gate_spatial_units": args.gate,
+        "topology_weight_spatial_units": args.topology_weight,
         "numpy_version": np.__version__,
         "scipy_version": scipy.__version__,
         "samples": results,

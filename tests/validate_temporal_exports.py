@@ -16,10 +16,11 @@ def key(row):
     return int(row["sample"]), row["keypoint_type"], int(row["persistent_id"])
 
 
-def validate(events_path, snapshots_path, lineage_path):
+def validate(events_path, snapshots_path, lineage_path, topology_path):
     events = rows(events_path)
     snapshots = rows(snapshots_path)
     lineage = rows(lineage_path)
+    topology = rows(topology_path)
     births = {}
     retirements = {}
     previous_step = -1
@@ -88,10 +89,45 @@ def validate(events_path, snapshots_path, lineage_path):
         seen_junctions.add(junction)
         seen_new_tips.add(new_tip)
 
+    topology_by_frame = defaultdict(dict)
+    for row in topology:
+        sample = int(row["sample"])
+        step = int(row["timestep"])
+        item = (sample, row["keypoint_type"], int(row["persistent_id"]))
+        frame = sample, step
+        assert item not in topology_by_frame[frame], f"duplicate topology row: {item}"
+        assert item in frames[frame], f"topology identity is not active: {item}"
+        topology_by_frame[frame][item] = row
+
+    for frame, active in frames.items():
+        graph = topology_by_frame[frame]
+        assert set(graph) == active, f"topology does not cover active frame: {frame}"
+        sample, _ = frame
+        for item, row in graph.items():
+            parent_id = int(row["parent_junction_id"])
+            if parent_id >= 0:
+                parent = (sample, "junction", parent_id)
+                assert parent in graph, f"missing parent junction for {item}"
+                parent_row = graph[parent]
+                children = {
+                    (sample, parent_row["child1_type"], int(parent_row["child1_id"])),
+                    (sample, parent_row["child2_type"], int(parent_row["child2_id"])),
+                }
+                assert item in children, f"parent does not reference child {item}"
+            if item[1] == "junction":
+                for slot in ("child1", "child2"):
+                    child_type = row[slot + "_type"]
+                    child_id = int(row[slot + "_id"])
+                    child = (sample, child_type, child_id)
+                    assert child in graph, f"missing {slot} for junction {item}"
+                    assert int(graph[child]["parent_junction_id"]) == item[2], \
+                        f"child does not reference parent {item}"
+
     print(
         "valid:", f"events={len(events)}", f"births={len(births)}",
         f"retirements={len(retirements)}", f"snapshot_rows={len(snapshots)}",
-        f"frames={len(frames)}", f"lineage_events={len(lineage)}"
+        f"frames={len(frames)}", f"lineage_events={len(lineage)}",
+        f"topology_rows={len(topology)}"
     )
 
 
@@ -100,5 +136,6 @@ if __name__ == "__main__":
     parser.add_argument("events", type=Path)
     parser.add_argument("snapshots", type=Path)
     parser.add_argument("lineage", type=Path)
+    parser.add_argument("topology", type=Path)
     args = parser.parse_args()
-    validate(args.events, args.snapshots, args.lineage)
+    validate(args.events, args.snapshots, args.lineage, args.topology)

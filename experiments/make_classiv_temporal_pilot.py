@@ -56,10 +56,15 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("source", type=Path)
     parser.add_argument("output", type=Path)
+    parser.add_argument("--seed", type=int, default=20260908)
+    parser.add_argument("--name", default="ClassIVTemporalPilot")
     args = parser.parse_args()
 
     text = args.source.read_text(encoding="utf-8")
-    for key, value in REPLACEMENTS.items():
+    replacements = dict(REPLACEMENTS)
+    replacements["RandomSeed"] = str(args.seed)
+    replacements["SimulationName"] = args.name
+    for key, value in replacements.items():
         text = replace_parameter(text, key, value)
     for old, new in RENAMED_PARAMETERS.items():
         text = rename_parameter(text, old, new)

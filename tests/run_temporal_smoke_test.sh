@@ -22,7 +22,8 @@ clang++ -std=c++17 -O0 -g -Wall -Wextra -Wno-unused-parameter \
 python3 "$script_dir/validate_temporal_exports.py" \
     "$test_dir/TrackerUnit-KeypointEvents-Sample-1.csv" \
     "$test_dir/TrackerUnit-KeypointSnapshots-Sample-1.csv" \
-    "$test_dir/TrackerUnit-KeypointLineage-Sample-1.csv"
+    "$test_dir/TrackerUnit-KeypointLineage-Sample-1.csv" \
+    "$test_dir/TrackerUnit-KeypointTopology-Sample-1.csv"
 
 sed \
     -e 's/^    NSample=.*/    NSample=2;/' \
@@ -45,14 +46,15 @@ mkdir "$test_dir/run-a" "$test_dir/run-b"
 (cd "$test_dir/run-b" && "$test_dir/build/BranchMorphoGen" "$test_dir/parameters.test.in")
 
 for sample in 1 2; do
-    for stem in KeypointEvents KeypointSnapshots KeypointLineage; do
+    for stem in KeypointEvents KeypointSnapshots KeypointLineage KeypointTopology; do
         file="TemporalTest-${stem}-Sample-${sample}.csv"
         cmp "$test_dir/run-a/$file" "$test_dir/run-b/$file"
     done
     python3 "$script_dir/validate_temporal_exports.py" \
         "$test_dir/run-a/TemporalTest-KeypointEvents-Sample-${sample}.csv" \
         "$test_dir/run-a/TemporalTest-KeypointSnapshots-Sample-${sample}.csv" \
-        "$test_dir/run-a/TemporalTest-KeypointLineage-Sample-${sample}.csv"
+        "$test_dir/run-a/TemporalTest-KeypointLineage-Sample-${sample}.csv" \
+        "$test_dir/run-a/TemporalTest-KeypointTopology-Sample-${sample}.csv"
 done
 
 printf '%s\n' "deterministic temporal smoke test passed"

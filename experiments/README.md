@@ -62,3 +62,28 @@ identities. The output also reports identity switches, missed continuations,
 births or retirements incorrectly linked, and correct-match distances. Results
 on this pilot are development evidence only; they are not train/test estimates
 and the gate was not validated on held-out simulated or real data.
+
+## Topology-aware comparison
+
+With `KeypointTopology` files available, select a structural-cost weight using
+development arbors only:
+
+```sh
+python experiments/select_topology_weight.py \
+  --gate 5 --weights 0 0.25 0.5 1 2 5 \
+  --snapshots /path/to/dev/*KeypointSnapshots*.csv \
+  --topology /path/to/dev/*KeypointTopology*.csv \
+  --output topology-weight-selection.json
+```
+
+The selection rule is maximum development macro F1, with the smallest weight
+breaking ties. Evaluate the selected weight once on separately seeded held-out
+arbors using `evaluate_association_baseline.py --topology ...
+--topology-weight ...`.
+
+The topology descriptor contains only anonymous structural measurements:
+presence and distance of a parent junction, sorted child-edge lengths, fraction
+of immediate children that are tips, and child opening angle. Persistent IDs are
+used to retrieve connected coordinates while constructing the simulator
+fixture, but ID values and equality are not included in assignment costs. IDs
+are consulted only after assignment to calculate evaluation metrics.

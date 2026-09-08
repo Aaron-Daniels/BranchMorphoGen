@@ -4,6 +4,7 @@
 #include <fstream>
 #include <iomanip>
 #include <stdexcept>
+#include <tuple>
 
 namespace {
 void requireStream(const std::ofstream& stream, const std::string& filename) {
@@ -33,6 +34,8 @@ void KeypointTracker::initialize(std::vector<Branch>& branches,
                      std::to_string(sample) + ".csv";
     lineageFilename_ = params.SimulationName + "-KeypointLineage-Sample-" +
                        std::to_string(sample) + ".csv";
+    topologyFilename_ = params.SimulationName + "-KeypointTopology-Sample-" +
+                        std::to_string(sample) + ".csv";
     branchingMode_ = params.Bifurcation ? "bifurcation" : "side_branching";
 
     for (Branch& branch : branches) {
@@ -52,6 +55,11 @@ void KeypointTracker::initialize(std::vector<Branch>& branches,
     requireStream(lineage, lineageFilename_);
     lineage << "sample,timestep,time,branching_mode,source_tip_id,junction_id,"
                "continuing_tip_id,new_tip_id,x,y,z\n";
+
+    std::ofstream topology(topologyFilename_, std::ios::trunc);
+    requireStream(topology, topologyFilename_);
+    topology << "sample,timestep,time,keypoint_type,persistent_id,parent_junction_id,"
+                "child1_type,child1_id,child2_type,child2_id\n";
 }
 
 void KeypointTracker::assignAfterBranching(std::vector<Branch>& branches,
@@ -181,4 +189,59 @@ void KeypointTracker::writeSnapshot(const std::vector<Branch>& branches,
     };
     write("tip", observeTips(branches), tipBirths_);
     write("junction", observeJunctions(branches), junctionBirths_);
+    snapshots.close();
+    writeTopologySnapshot(branches, timestep, time);
+}
+
+void KeypointTracker::writeTopologySnapshot(const std::vector<Branch>& branches,
+                                            std::size_t timestep,
+                                            double time) const {
+    struct Record {
+        const char* type;
+        std::int64_t id;
+        std::int64_t parent;
+        const char* child1Type;
+        std::int64_t child1;
+        const char* child2Type;
+        std::int64_t child2;
+    };
+    std::vector<Record> records;
+
+    const auto parentID = [&](const Branch& branch) {
+        if (branch.Parent_ID < 0 || branch.Parent_ID >= static_cast<int>(branches.size()))
+            return std::int64_t{-1};
+        return branches[branch.Parent_ID].PersistentJunctionID;
+    };
+    const auto child = [&](int index) -> std::tuple<const char*, std::int64_t> {
+        if (index < 0 || index >= static_cast<int>(branches.size())) return {"none", -1};
+        const Branch& branch = branches[index];
+        if (branch.Dynamic) return {"tip", branch.PersistentTipID};
+        return {"junction", branch.PersistentJunctionID};
+    };
+
+    for (const Branch& branch : branches) {
+        if (branch.Dynamic && branch.PersistentTipID >= 0) {
+            records.push_back({"tip", branch.PersistentTipID, parentID(branch),
+                               "none", -1, "none", -1});
+        } else if (!branch.Dynamic && branch.PersistentJunctionID >= 0) {
+            const auto [child1Type, child1ID] = child(branch.Child1_ID);
+            const auto [child2Type, child2ID] = child(branch.Child2_ID);
+            records.push_back({"junction", branch.PersistentJunctionID, parentID(branch),
+                               child1Type, child1ID, child2Type, child2ID});
+        }
+    }
+    std::sort(records.begin(), records.end(), [](const Record& a, const Record& b) {
+        const std::string aType(a.type);
+        const std::string bType(b.type);
+        return aType == bType ? a.id < b.id : aType < bType;
+    });
+
+    std::ofstream topology(topologyFilename_, std::ios::app);
+    requireStream(topology, topologyFilename_);
+    topology << std::setprecision(17);
+    for (const Record& record : records) {
+        topology << sample_ << ',' << timestep << ',' << time << ',' << record.type << ','
+                 << record.id << ',' << record.parent << ',' << record.child1Type << ','
+                 << record.child1 << ',' << record.child2Type << ',' << record.child2 << '\n';
+    }
 }

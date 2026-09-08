@@ -46,4 +46,16 @@ with tempfile.TemporaryDirectory() as directory:
     assert aggregate["tip_f1"] == 1.0
     assert aggregate["junction_f1"] == 1.0
 
+previous = {0: baseline.np.array([0.0, 0.0, 0.0]), 1: baseline.np.array([1.0, 0.0, 0.0])}
+current = {0: baseline.np.array([0.9, 0.0, 0.0]), 1: baseline.np.array([0.1, 0.0, 0.0])}
+descriptors = {0: baseline.np.array([0.0]), 1: baseline.np.array([10.0])}
+motion_only = baseline.match(previous, current, gate=2.0)
+topology_aware = baseline.match(
+    previous, current, gate=2.0,
+    previous_descriptors=descriptors, current_descriptors=descriptors,
+    topology_weight=1.0,
+)
+assert sum(a == b for a, b, _ in motion_only) == 0
+assert sum(a == b for a, b, _ in topology_aware) == 2
+
 print("association baseline functional test passed")

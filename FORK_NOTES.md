@@ -29,6 +29,7 @@ Set `DumpKeypoints=true` to write:
 - `<SimulationName>-KeypointSnapshots-Sample-<N>.csv`
 - `<SimulationName>-KeypointEvents-Sample-<N>.csv`
 - `<SimulationName>-KeypointLineage-Sample-<N>.csv`
+- `<SimulationName>-KeypointTopology-Sample-<N>.csv`
 
 Snapshot rows contain sample, timestep, simulation time, keypoint type,
 persistent ID, x/y/z coordinates, dynamic state, and birth timestep. Event rows
@@ -46,6 +47,17 @@ convention. `junction_id` and `new_tip_id` must be born at the lineage event's
 timestep. The row also records whether the simulator was configured for side
 branching or bifurcation and the new junction's position.
 
+Each topology row records an active tip or junction and its immediate graph
+relationships at an exported frame:
+
+```text
+sample,timestep,time,keypoint_type,persistent_id,parent_junction_id,child1_type,child1_id,child2_type,child2_id
+```
+
+Tips have no children. Every junction has two immediate children, each typed as
+a tip or junction. The validator requires complete active-frame coverage and
+reciprocal parent/child references.
+
 `RandomSeed` is the deterministic base seed. Sample index `i` (zero-based for
 seed derivation) uses `RandomSeed + i`; therefore serial and parallel execution
 have the same intended per-sample seed assignment.
@@ -62,7 +74,7 @@ The test compiles a debug executable, runs a forced topology lifecycle fixture,
 runs two identical two-sample simulations, byte-compares their keypoint CSVs,
 and validates unique births, retirement ordering, non-reuse, birth timestamps,
 active identities at every exported frame, and the referential integrity of
-every branching-lineage relationship.
+every branching-lineage and per-frame topology relationship.
 
 On the initial development machine, CMake was unavailable, so validation used
 Apple Clang with the Homebrew libTIFF include/library paths. The upstream CMake

@@ -6,6 +6,10 @@ namespace {
 Branch makeTip(int id, Vec3 point) {
     Branch branch{};
     branch.ID = id;
+    branch.Parent_ID = -1;
+    branch.Child1_ID = -1;
+    branch.Child2_ID = -1;
+    branch.Sibling_ID = -1;
     branch.Dynamic = true;
     branch.Points.push_back(point);
     return branch;
@@ -30,6 +34,8 @@ int main() {
     parent.Points.back() = {0.5, 0.5, 0.0};
     Branch continuation = makeTip(1, {1.5, 1.0, 0.0});
     Branch daughter = makeTip(2, {0.5, 1.5, 0.0});
+    continuation.Parent_ID = 0;
+    daughter.Parent_ID = 0;
     branches = {parent, continuation, daughter};
     tracker.assignAfterBranching(branches, 1, 1.0);
     tracker.reconcileAfterTopology(branches);

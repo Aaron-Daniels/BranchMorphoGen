@@ -39,6 +39,7 @@ private:
     std::string snapshotFilename_;
     std::string eventFilename_;
     std::string lineageFilename_;
+    std::string topologyFilename_;
     const char* branchingMode_ = "side_branching";
     Observations previousTips_;
     Observations previousJunctions_;
@@ -53,4 +54,7 @@ private:
                     std::unordered_map<std::int64_t, std::size_t>& births,
                     std::size_t timestep,
                     double time);
+    void writeTopologySnapshot(const std::vector<Branch>& branches,
+                               std::size_t timestep,
+                               double time) const;
 };

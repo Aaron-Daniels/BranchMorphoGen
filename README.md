@@ -10,10 +10,10 @@ A C++ framework for computational branching morphogenesis.
 ## Temporal keypoint identities (fork feature)
 
 This fork can export persistent tip and junction identities, lifecycle events,
-and explicit branching-lineage relationships for association and tracking
-experiments. Set `DumpKeypoints=true` and choose a `RandomSeed` in the input
-file. See [FORK_NOTES.md](FORK_NOTES.md) for identity semantics, CSV schemas,
-validation, provenance, and current limitations.
+explicit branching-lineage relationships, and per-frame keypoint topology for
+association and tracking experiments. Set `DumpKeypoints=true` and choose a
+`RandomSeed` in the input file. See [FORK_NOTES.md](FORK_NOTES.md) for identity
+semantics, CSV schemas, validation, provenance, and current limitations.
 
 # BranchMorphoGen Installation Instructions
 ## Prerequisites
