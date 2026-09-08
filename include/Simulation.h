@@ -27,6 +27,7 @@
 #include <vector>
 #include "SimulationParameters.h"
 #include "Branch/BranchCommon.h"
+#include "KeypointTracker.h"
 
 class Simulation
 {
@@ -52,6 +53,7 @@ public:
 
 private:
     std::vector<Branch> Branches;
+    KeypointTracker keypointTracker_;
 
     /* ---------- Added ---------- */
     //std::vector<int> sorted_indices;   // persistent spatial ordering

@@ -283,7 +283,9 @@ void Simulation::Step(SimulationParameters &params,
         }
         }
     //////////////// If there is debranching fix tree topology and update neighborlist
+    keypointTracker_.assignAfterBranching(Branches);
     BranchRelabel::debranching(Branches, Deletion_List, params);
+    keypointTracker_.reconcileAfterTopology(Branches);
     /////////////////////////// Calculate force and update positions and radius
     if (irun % params.ForceSkip == 0){
         BranchTopology::updateRadius(Branches, params);   
@@ -295,9 +297,12 @@ void Simulation::Step(SimulationParameters &params,
     ///// Print overall time properties
     if(irun % static_cast<int>(1.0 / params.Dt) == 0) {PrintTimeFile::printTimeFile(Branches, filename, tsim);}
 
+    keypointTracker_.recordLifecycle(Branches, irun, tsim);
+
     /////////////////////////// Print swc and tiff files
     if (irun % params.SWC_frequency == 0)
     {
+        keypointTracker_.writeSnapshot(Branches, irun, tsim);
         PrintSWC::printSWCFiles(Branches, params, iteration_index, tsim);
         PrintTIFF::printImage(Branches, params, iteration_index, tsim);
         PrintBranchStats::printBranchStats(Branches, params, iteration_index, tsim);
@@ -314,6 +319,7 @@ void Simulation::Run(SimulationParameters &params, const int iteration_index)
     size_t istep = 0;
     ///////////////////////////////
     updateNeighborList(Branches,params);
+    keypointTracker_.initialize(Branches, params, iteration_index);
     ///////////////////////////////////
     while (tsim <= params.Time_End + params.Dt)
     {
@@ -328,4 +334,3 @@ void Simulation::Run(SimulationParameters &params, const int iteration_index)
 
 
 }
-

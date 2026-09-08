@@ -7,6 +7,13 @@ BranchMorphoGen is an open source high performance C++ framework for simulating 
 
 A C++ framework for computational branching morphogenesis.
 
+## Temporal keypoint identities (fork feature)
+
+This fork can export persistent tip and junction identities for association and
+tracking experiments. Set `DumpKeypoints=true` and choose a `RandomSeed` in the
+input file. See [FORK_NOTES.md](FORK_NOTES.md) for identity semantics, CSV
+schemas, validation, provenance, and current limitations.
+
 # BranchMorphoGen Installation Instructions
 ## Prerequisites
 Before building BranchMorphoGen, make sure the following tools and libraries are installed:
@@ -106,4 +113,3 @@ for detailed error messages.
 ## License
 
 This project is open-source. Please see the `LICENSE` file in the root directory for full licensing terms.
-

@@ -35,7 +35,6 @@
 #include <chrono>
 #include <mutex>
 
-constexpr unsigned int GLOBAL_SEED = 65;
 #include "Banner.h"
 #include "RandomUtils.h"
 #include "SimulationParameters.h"
@@ -121,7 +120,7 @@ if (argc > 1 && std::string(argv[1]) == "--about") {
 
             auto t0 = std::chrono::steady_clock::now();
     
-            RandomUtils::InitializeGenerator(GLOBAL_SEED + i);
+            RandomUtils::InitializeGenerator(params.RandomSeed + static_cast<unsigned int>(i));
             Simulation sim(swcFiles[i], params);
             sim.Run(params, i + 1);
 
@@ -140,7 +139,7 @@ if (argc > 1 && std::string(argv[1]) == "--about") {
                 auto t0 = std::chrono::steady_clock::now();
 
                 SimulationParameters threadParams = params;
-                RandomUtils::InitializeGenerator(GLOBAL_SEED + i);
+                RandomUtils::InitializeGenerator(threadParams.RandomSeed + static_cast<unsigned int>(i));
 
                 Simulation sim(swcFiles[i], threadParams);
                 sim.Run(threadParams, i + 1);

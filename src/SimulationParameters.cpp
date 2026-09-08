@@ -247,6 +247,9 @@ val = trim(val);
         else if(key == "RunParallel"){
             params.RunParallel=parseBool(val);
         }
+        else if(key == "RandomSeed"){
+            params.RandomSeed=static_cast<std::uint32_t>(std::stoul(val));
+        }
         else if (key == "Dimension") {
             params.Dimension = std::stoi(val);
         }
@@ -461,6 +464,9 @@ val = trim(val);
         }
         else if (key == "N_SWC") {
             params.N_SWC = std::stoi(val);
+        }
+        else if (key == "DumpKeypoints") {
+            params.DumpKeypoints = parseBool(val);
         }
         else if (key == "ImagePlane") {
             params.ImagePlane = toLower(val);

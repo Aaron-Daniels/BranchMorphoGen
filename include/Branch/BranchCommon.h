@@ -26,6 +26,7 @@
 
 #pragma once
 
+#include <cstdint>
 #include <vector>
 #include "Utilities.h"
 #include "SimulationParameters.h"
@@ -41,6 +42,9 @@ struct Branch
     int Child1_ID;
     int Child2_ID;
     int Sibling_ID;
+    // Immutable, sample-scoped identities for temporal keypoint export.
+    std::int64_t PersistentTipID = -1;
+    std::int64_t PersistentJunctionID = -1;
     double Radius;
     double Velocity;
     bool Dynamic;

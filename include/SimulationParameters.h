@@ -26,6 +26,7 @@
 #ifndef SIMULATIONPARAMETERS_H
 #define SIMULATIONPARAMETERS_H
 #include <cmath>
+#include <cstdint>
 #include <string>
 #include <vector>
 #include "Utilities.h"
@@ -39,6 +40,7 @@ struct SimulationParameters {
     std::string SimulationName;              // Name identifier for the simulation output
     int NSample;                             // Number of simulation samples to run
     bool RunParallel;                       // run Simulation parallely? true/false/yes/no/
+    std::uint32_t RandomSeed = 65;           // Base seed; sample i uses RandomSeed + i
     int Dimension;                           // Dimensionality of the simulation (2 or 3)
     double Dt;                               // Time step size
     double Time_Start;                       // Simulation end time
@@ -99,6 +101,7 @@ struct SimulationParameters {
     double BetaRadius;                       // Controls thickness of branch with leaf no/subtree size/subtree length/and subtree volume etc
     
     int N_SWC;                               // Number of frames for which to output SWC files
+    bool DumpKeypoints = false;              // Export persistent keypoint snapshots/events
     std::string ImagePlane;
     double MAX_IMAGE_SIZE;                   // Size (in spatial units) of generated images
     double pixelsize;                        // Size of one pixel in spatial units
@@ -153,4 +156,3 @@ struct SimulationParameters {
 SimulationParameters parseInputFile(const std::string& filename);
 
 #endif // SIMULATIONPARAMETERS_H
-

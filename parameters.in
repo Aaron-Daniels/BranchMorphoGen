@@ -11,6 +11,7 @@
     TemporalUnit=min;                           //don't put quotation marks
     NSample=1;                                  //Number of samples
     RunParallel=false;                           # run parallely ?
+    RandomSeed=65;                               //Base seed; sample i uses RandomSeed + i
     Dimension = 2;                              // Simulation dimension: 2 or 3
     Dt = 0.025;                                 // Time step size in TemporalUnit
     Time_Start = 960.0;                          //Simulation start time
@@ -108,6 +109,7 @@
 
 ###################### Data output Configurations     
     N_SWC=11;                                     //Number of swc files to print
+    DumpKeypoints=false;                          //Persistent tip/junction snapshots and events
     MAX_IMAGE_SIZE=500;                          // in spatial Units (-1 for LimitsX,LimitsY)
     ImagePlane=xy;                                 //plane of image; options xy/xz/yz
     pixelsize=0.1615;                               // in spatial Units
@@ -117,4 +119,3 @@
     BackgroundStd=2.50;
 
 ######## END OF INPUT PARAMETERS 
-

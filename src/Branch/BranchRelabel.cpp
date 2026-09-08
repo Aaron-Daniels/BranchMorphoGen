@@ -241,6 +241,8 @@ void BranchRelabel::mergeTipsAfterDeletion(int branch_id,
         parent.State     = sibling.State;
         parent.Velocity  = sibling.Velocity;
         parent.Termination = sibling.Termination;
+        parent.PersistentTipID = sibling.PersistentTipID;
+        parent.PersistentJunctionID = -1;
 
         // Update children only if their indices are valid
         if (!sibling.Dynamic) {
