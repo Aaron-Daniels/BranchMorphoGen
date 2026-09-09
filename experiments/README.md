@@ -13,6 +13,11 @@ python experiments/make_classiv_temporal_pilot.py \
   ClassIV_parameters.in /path/to/output/pilot.in
 ```
 
+The defaults reproduce the three-arbor pilot. Larger disjoint corpus partitions
+can be created with explicit `--samples`, `--seed`, `--name`, `--frames`,
+`--time-start`, `--time-end`, and `--max-image-size` arguments. Seeds must not
+overlap between partitions.
+
 The generator uses the upstream Class-IV-labeled dynamic parameters but makes
 these explicit changes:
 

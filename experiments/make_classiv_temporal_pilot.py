@@ -58,12 +58,29 @@ def main() -> None:
     parser.add_argument("output", type=Path)
     parser.add_argument("--seed", type=int, default=20260908)
     parser.add_argument("--name", default="ClassIVTemporalPilot")
+    parser.add_argument("--samples", type=int, default=3)
+    parser.add_argument("--frames", type=int, default=6)
+    parser.add_argument("--time-start", type=float, default=960.0)
+    parser.add_argument("--time-end", type=float, default=970.0)
+    parser.add_argument("--max-image-size", type=float, default=60.0)
     args = parser.parse_args()
+
+    if args.samples < 1 or args.frames < 1:
+        raise ValueError("samples and frames must be positive")
+    if args.time_end <= args.time_start:
+        raise ValueError("time-end must be greater than time-start")
+    if args.max_image_size <= 0:
+        raise ValueError("max-image-size must be positive")
 
     text = args.source.read_text(encoding="utf-8")
     replacements = dict(REPLACEMENTS)
     replacements["RandomSeed"] = str(args.seed)
     replacements["SimulationName"] = args.name
+    replacements["NSample"] = str(args.samples)
+    replacements["N_SWC"] = str(args.frames)
+    replacements["Time_Start"] = str(args.time_start)
+    replacements["Time_End"] = str(args.time_end)
+    replacements["MAX_IMAGE_SIZE"] = str(args.max_image_size)
     for key, value in replacements.items():
         text = replace_parameter(text, key, value)
     for old, new in RENAMED_PARAMETERS.items():
